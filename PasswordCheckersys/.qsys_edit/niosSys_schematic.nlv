@@ -1,0 +1,53 @@
+# # File gsaved with Nlview version 6.3.8  2013-12-19 bk=1.2992 VDI=34 GEI=35
+# 
+preplace inst niosSys.myCPU -pg 1 -lvl 2 -y 620
+preplace inst niosSys.Switches -pg 1 -lvl 3 -y 2010
+preplace inst niosSys.jtag_uart_0 -pg 1 -lvl 3 -y 1170
+preplace inst niosSys.System_Clock_Timer -pg 1 -lvl 3 -y 990
+preplace inst niosSys.High_Res_Timer -pg 1 -lvl 3 -y 650
+preplace inst niosSys.myCPU.cpu -pg 1
+preplace inst niosSys.MAIN_CLK.reset_from_locked -pg 1
+preplace inst niosSys.HEX_0 -pg 1 -lvl 3 -y 2130
+preplace inst niosSys -pg 1 -lvl 1 -y 40 -regy -20
+preplace inst niosSys.KEY_0 -pg 1 -lvl 3 -y 130
+preplace inst niosSys.HEX_1 -pg 1 -lvl 3 -y 30
+preplace inst niosSys.TCM -pg 1 -lvl 3 -y 850
+preplace inst niosSys.HEX_2 -pg 1 -lvl 3 -y 1270
+preplace inst niosSys.myCPU.reset_bridge -pg 1
+preplace inst niosSys.HEX_3 -pg 1 -lvl 3 -y 1370
+preplace inst niosSys.sysID -pg 1 -lvl 3 -y 1090
+preplace inst niosSys.MAIN_CLK.sys_pll -pg 1
+preplace inst niosSys.LEDG -pg 1 -lvl 3 -y 530
+preplace inst niosSys.HEX_4 -pg 1 -lvl 3 -y 1470
+preplace inst niosSys.MAIN_CLK -pg 1 -lvl 1 -y 210
+preplace inst niosSys.HEX_5 -pg 1 -lvl 3 -y 1570
+preplace inst niosSys.HEX_6 -pg 1 -lvl 3 -y 1670
+preplace inst niosSys.HEX_7 -pg 1 -lvl 3 -y 1770
+preplace inst niosSys.myCPU.clock_bridge -pg 1
+preplace inst niosSys.SDRAM -pg 1 -lvl 3 -y 430
+preplace inst niosSys.LEDs -pg 1 -lvl 3 -y 1870
+preplace inst niosSys.Altera_UP_SD_Card_Avalon_Interface_0 -pg 1 -lvl 3 -y 260
+preplace netloc EXPORT<net_container>niosSys</net_container>(SLAVE)niosSys.ref_clk,(SLAVE)MAIN_CLK.ref_clk) 1 0 1 NJ
+preplace netloc EXPORT<net_container>niosSys</net_container>(MASTER)niosSys.sdram_clk,(MASTER)MAIN_CLK.sdram_clk) 1 1 3 NJ 370 NJ 370 NJ
+preplace netloc EXPORT<net_container>niosSys</net_container>(SLAVE)HEX_7.external_connection,(SLAVE)niosSys.hex_7) 1 0 3 NJ 1800 NJ 1800 NJ
+preplace netloc EXPORT<net_container>niosSys</net_container>(SLAVE)niosSys.leds,(SLAVE)LEDs.external_connection) 1 0 3 NJ 1900 NJ 1900 NJ
+preplace netloc EXPORT<net_container>niosSys</net_container>(SLAVE)niosSys.hex_5,(SLAVE)HEX_5.external_connection) 1 0 3 NJ 1600 NJ 1600 NJ
+preplace netloc EXPORT<net_container>niosSys</net_container>(SLAVE)HEX_1.external_connection,(SLAVE)niosSys.hex_1) 1 0 3 NJ 60 NJ 60 NJ
+preplace netloc FAN_OUT<net_container>niosSys</net_container>(SLAVE)sysID.clk,(SLAVE)TCM.clk1,(SLAVE)HEX_1.clk,(SLAVE)LEDs.clk,(SLAVE)HEX_3.clk,(SLAVE)jtag_uart_0.clk,(SLAVE)KEY_0.clk,(SLAVE)HEX_0.clk,(SLAVE)System_Clock_Timer.clk,(SLAVE)High_Res_Timer.clk,(SLAVE)Switches.clk,(SLAVE)HEX_4.clk,(SLAVE)HEX_2.clk,(SLAVE)myCPU.clk,(SLAVE)Altera_UP_SD_Card_Avalon_Interface_0.clk,(SLAVE)SDRAM.clk,(SLAVE)HEX_5.clk,(SLAVE)TCM.clk2,(SLAVE)HEX_7.clk,(MASTER)MAIN_CLK.sys_clk,(SLAVE)LEDG.clk,(SLAVE)HEX_6.clk) 1 1 2 340 260 810
+preplace netloc EXPORT<net_container>niosSys</net_container>(SLAVE)niosSys.sdram,(SLAVE)SDRAM.wire) 1 0 3 NJ 500 NJ 500 NJ
+preplace netloc POINT_TO_POINT<net_container>niosSys</net_container>(SLAVE)TCM.s1,(MASTER)myCPU.tightly_coupled_instruction_master_0) 1 2 1 790
+preplace netloc INTERCONNECT<net_container>niosSys</net_container>(SLAVE)HEX_1.s1,(SLAVE)HEX_5.s1,(SLAVE)System_Clock_Timer.s1,(MASTER)myCPU.data_master,(SLAVE)HEX_4.s1,(SLAVE)HEX_0.s1,(SLAVE)LEDG.s1,(SLAVE)Switches.s1,(SLAVE)KEY_0.s1,(SLAVE)SDRAM.s1,(SLAVE)TCM.s2,(SLAVE)HEX_6.s1,(SLAVE)HEX_7.s1,(SLAVE)sysID.control_slave,(MASTER)myCPU.instruction_master,(SLAVE)Altera_UP_SD_Card_Avalon_Interface_0.avalon_sdcard_slave,(SLAVE)HEX_2.s1,(SLAVE)High_Res_Timer.s1,(SLAVE)myCPU.debug_mem_slave,(SLAVE)jtag_uart_0.avalon_jtag_slave,(SLAVE)LEDs.s1,(SLAVE)HEX_3.s1) 1 1 2 380 780 830
+preplace netloc EXPORT<net_container>niosSys</net_container>(SLAVE)Altera_UP_SD_Card_Avalon_Interface_0.conduit_end,(SLAVE)niosSys.sd) 1 0 3 NJ 310 NJ 310 NJ
+preplace netloc EXPORT<net_container>niosSys</net_container>(SLAVE)niosSys.hex_3,(SLAVE)HEX_3.external_connection) 1 0 3 NJ 1400 NJ 1400 NJ
+preplace netloc FAN_OUT<net_container>niosSys</net_container>(SLAVE)KEY_0.irq,(SLAVE)jtag_uart_0.irq,(SLAVE)Switches.irq,(SLAVE)System_Clock_Timer.irq,(SLAVE)High_Res_Timer.irq,(MASTER)myCPU.irq) 1 2 1 850
+preplace netloc EXPORT<net_container>niosSys</net_container>(SLAVE)Switches.external_connection,(SLAVE)niosSys.switches) 1 0 3 NJ 2040 NJ 2040 NJ
+preplace netloc EXPORT<net_container>niosSys</net_container>(SLAVE)HEX_4.external_connection,(SLAVE)niosSys.hex_4) 1 0 3 NJ 1500 NJ 1500 NJ
+preplace netloc EXPORT<net_container>niosSys</net_container>(SLAVE)KEY_0.external_connection,(SLAVE)niosSys.key_0) 1 0 3 NJ 160 NJ 160 NJ
+preplace netloc EXPORT<net_container>niosSys</net_container>(SLAVE)niosSys.hex_2,(SLAVE)HEX_2.external_connection) 1 0 3 NJ 1300 NJ 1300 NJ
+preplace netloc INTERCONNECT<net_container>niosSys</net_container>(SLAVE)SDRAM.reset,(MASTER)MAIN_CLK.reset_source,(SLAVE)High_Res_Timer.reset,(SLAVE)HEX_5.reset,(SLAVE)LEDG.reset,(SLAVE)KEY_0.reset,(SLAVE)HEX_6.reset,(SLAVE)TCM.reset1,(SLAVE)myCPU.reset,(SLAVE)HEX_0.reset,(SLAVE)HEX_3.reset,(MASTER)myCPU.debug_reset_request,(SLAVE)System_Clock_Timer.reset,(SLAVE)Altera_UP_SD_Card_Avalon_Interface_0.reset,(SLAVE)jtag_uart_0.reset,(SLAVE)HEX_1.reset,(SLAVE)HEX_4.reset,(SLAVE)HEX_7.reset,(SLAVE)HEX_2.reset,(SLAVE)sysID.reset,(SLAVE)TCM.reset2,(SLAVE)LEDs.reset,(SLAVE)Switches.reset) 1 1 2 360 220 770
+preplace netloc EXPORT<net_container>niosSys</net_container>(SLAVE)MAIN_CLK.ref_reset,(SLAVE)niosSys.ref_reset) 1 0 1 NJ
+preplace netloc EXPORT<net_container>niosSys</net_container>(SLAVE)niosSys.hex_0,(SLAVE)HEX_0.external_connection) 1 0 3 NJ 2160 NJ 2160 NJ
+preplace netloc EXPORT<net_container>niosSys</net_container>(SLAVE)niosSys.ledg,(SLAVE)LEDG.external_connection) 1 0 3 NJ 560 NJ 560 NJ
+preplace netloc EXPORT<net_container>niosSys</net_container>(SLAVE)niosSys.hex_6,(SLAVE)HEX_6.external_connection) 1 0 3 NJ 1700 NJ 1700 NJ
+levelinfo -pg 1 0 70 1250
+levelinfo -hier niosSys 80 160 500 970 1130
