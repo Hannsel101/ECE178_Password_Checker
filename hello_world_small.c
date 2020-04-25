@@ -27,7 +27,9 @@ unsigned char buffer[16];//Buffer for input
 alt_u8 numChars = 0;//Number of characters currently stored in buffer
 unsigned char *bufferIndex;//determines what location the user is attempting to change
 
+//Hardware Functions
 void initHexDisplays();//clear all the hex displays
+void initLEDs();//Clear green and red leds
 void timerSetup(alt_u32 period);//Setup high res timer in milliseconds
 void startDelay();//Runs the timer for a set amount of time
 
@@ -49,9 +51,14 @@ void scheduler(alt_u8 *state);
 int i = 0;//For testing scheduler during development LEDR
 int k = 0;//For testing scheduler during development LEDG
 alt_up_character_lcd_dev * char_lcd_dev;//LCD pointer
+alt_up_sd_card_dev *device_reference = NULL;//SDCARD Pointer
 
 int main()
 {
+
+	int connected = 0;
+	device_reference = alt_up_sd_card_open_dev("/dev/Altera_UP_SD_Card_Avalon_Interface_0");
+
 	//alt_up_character_lcd_dev * char_lcd_dev;
 	// open the Character LCD port
 	char_lcd_dev = alt_up_character_lcd_open_dev ("/dev/character_lcd_0");
@@ -64,8 +71,11 @@ int main()
 	/* Initialize the character display */
 	alt_up_character_lcd_init (char_lcd_dev);
 
+	//Initialize PIOs
 	initHexDisplays();
-	timerSetup(20);//2ms
+	initLEDs();
+
+	timerSetup(2000);//2 seconds for the welcome message
 	IOWR(HIGH_RES_TIMER_BASE, 1, 4);//Start timer
 
 	//Control Variables
@@ -75,24 +85,42 @@ int main()
 	//main event loop
 	while (1)
 	{
-		  printf("State: %i\n", state);
 		  scheduler(&state);
 
 		  switch(state)
 		  {
 		  	  case(0)://Check for SD Card
+					   if ((connected == 0) && (alt_up_sd_card_is_Present())) {
+						   printf("Card connected.\n");
+						   if (alt_up_sd_card_is_FAT16())
+						   {
+							   printf("FAT16 file system detected.\n");
+						   } else
+						   {
+							   printf("Unknown file system.\n");
+						   }
+						   connected = 1;
+					   }
+					   else if ((connected == 1) && (alt_up_sd_card_is_Present() == false))
+					   {
+						   printf("Card disconnected.\n");
+						   connected = 0;
+					   }
+		  			  break;
 
 			  case(1):
 			  	  	  switch(displayState)
 			  	  	  {
 			  	  	  	  case(0)://Welcome Screen
 			  	  	  			  displayWelcome();
+			  	  	  	  	  	  startDelay();
+			  	  	  	  	  	  displayState += 1;
 			  	  	  	  	  	  break;
 			  	  	  	  case(1)://Selection Menu
 			  	  	  			  selectionMenu();
 			  	  	  	  	  	  break;
 			  	  	  	  default:
-			  	  	  		  	  printf("Display State Default\n");
+			  	  	  		  	  break;
 			  	  	  }
 
 					  break;
@@ -113,9 +141,10 @@ int main()
 					  ++i;
 					  break;
 			  default://FOR TESTING NOT ACTUAL CODE TO GO IN THIS STATE
-				      printf("In default case\n");
+				      break;
 		  }
 	}
+
 	return 0;
 }
 
@@ -167,6 +196,12 @@ void initHexDisplays()
 	IOWR(HEX_7_BASE, 0, 0xFF);
 }
 //------------------------------------------------------------------//
+void initLEDs()
+{
+	IOWR(LEDS_BASE, 0, 0);
+	IOWR(LEDG_BASE, 0, 0);
+}
+//------------------------------------------------------------------//
 void scheduler(alt_u8 *state)
 {
 	if(IORD(HIGH_RES_TIMER_BASE, 0) & 1)
@@ -185,34 +220,28 @@ void scheduler(alt_u8 *state)
 		switch(*state)
 			{
 				case 0://Check if SD card is still inserted
-					timerSetup(4);//Timer set to 500ns
+					timerSetup(4);//Timer set to 400ns
 					IOWR(HIGH_RES_TIMER_BASE, 1, 4);//Start the timer in control register
-					//printf("Checking SDCARD\n");
 					break;
-				case 1://display current cursor position and contents on screen
-					timerSetup(4);//Timer set to 500ns
+				case 1://display contents on screen
+					timerSetup(4);//Timer set to 400ns
 					IOWR(HIGH_RES_TIMER_BASE, 1, 4);//Start the timer in control register
-					//printf("Display Contents on LCD\n");
 					break;
 				case 2://Poll User input
 					timerSetup(100);//Timer set to 10ms
 					IOWR(HIGH_RES_TIMER_BASE, 1, 4);//Start the timer in control register
-					//printf("Polling User Input\n");
 					break;
 				case 3://Check valid input from user
 					timerSetup(20);//Timer set to 2ms
 					IOWR(HIGH_RES_TIMER_BASE, 1, 4);//Start the timer in control register
-					//printf("Checking Input for edge cases\n");
 					break;
 				default:
 					timerSetup(500);//Timer set to 50ms
 					IOWR(HIGH_RES_TIMER_BASE, 1, 4);//Start the timer in control register
-					//printf("In Default for scheduler\n");
 			}
 	}
 	else
 	{
-		printf("Normal Operation: No context switch.\n");
 	}
 }
 //------------------------------------------------------------------//
@@ -242,7 +271,7 @@ void promptPassword()
 //------------------------------------------------------------------//
 void selectionMenu()
 {
-
+	alt_up_character_lcd_init (char_lcd_dev);
 }
 //------------------------------------------------------------------//
 
