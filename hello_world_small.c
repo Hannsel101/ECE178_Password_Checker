@@ -23,9 +23,10 @@
 #define NUM_STATES 4
 
 //Global Variables
-unsigned char buffer[16];//Buffer for input
+volatile unsigned char buffer[64];//Buffer for input
 alt_u8 numChars = 0;//Number of characters currently stored in buffer
 unsigned char *bufferIndex;//determines what location the user is attempting to change
+volatile short int sdcardStorage;
 
 //Hardware Functions
 void initHexDisplays();//clear all the hex displays
@@ -44,6 +45,8 @@ void promptUsername();
 void promptPassword();
 void selectionMenu();
 
+//SDCard Functions
+bool sdcardTest();//Checks if card can access a file and returns true if it can, otherwise false
 
 //State Machine that gives time slices to each state before switching to the next
 void scheduler(alt_u8 *state);
@@ -81,6 +84,12 @@ int main()
 	//Control Variables
 	alt_u8 state = 0;
 	alt_u8 displayState = 0;
+	alt_u8 sdState = 0;
+	bool fileOpened = false;
+	bool readOnce = false;
+
+	//Buffers
+	volatile unsigned char readBuffer[4][16];//Holds up to four rows of values to output to lcd
 
 	//main event loop
 	while (1)
@@ -89,25 +98,36 @@ int main()
 
 		  switch(state)
 		  {
-		  	  case(0)://Check for SD Card
-					   if ((connected == 0) && (alt_up_sd_card_is_Present())) {
-						   printf("Card connected.\n");
-						   if (alt_up_sd_card_is_FAT16())
-						   {
-							   printf("FAT16 file system detected.\n");
-						   } else
-						   {
-							   printf("Unknown file system.\n");
-						   }
-						   connected = 1;
-					   }
-					   else if ((connected == 1) && (alt_up_sd_card_is_Present() == false))
-					   {
-						   printf("Card disconnected.\n");
-						   connected = 0;
-					   }
+		  	  case(0)://SD Card Operations
+		  			  switch(sdState)//Current operation to be handled by SDcard
+		  			  {
+						  case (0)://Check for SDCard
+								if ((connected == 0) && (alt_up_sd_card_is_Present()))
+								{
+								   printf("Card connected.\n");
+								   if (alt_up_sd_card_is_FAT16())
+								   {
+									   printf("FAT16 file system detected.\n");
+									   sdState += 1;//Everything checks out move on to next state
+								   } else
+								   {
+									   printf("Unknown file system.\n");
+								   }
+								   connected = 1;
+								}
+								else if ((connected == 1) && (alt_up_sd_card_is_Present() == false))
+								{
+								   printf("Card disconnected.\n");
+								   connected = 0;
+								}
+						  	    break;
+						  case(1)://Read from SDcard
+								//for(int i=0; (i<16) && (readBuffer[i] != '\n'); ++i)
+						  			//printf("readBuffer: %c", readBuffer[0][i]);
+						  	  	//printf("\n");
+							    break;
+		  			  }
 		  			  break;
-
 			  case(1):
 			  	  	  switch(displayState)
 			  	  	  {
@@ -141,6 +161,29 @@ int main()
 					  ++i;
 					  break;
 			  default://FOR TESTING NOT ACTUAL CODE TO GO IN THIS STATE
+				  	  if(fileOpened && !readOnce)
+				  	  {
+				  		printf("readBuffer: ");
+				  		for(int i2=0; (i2<64) && (buffer[i2] != -1); ++i2)
+				  		{
+				  			buffer[i2] = alt_up_sd_card_read(sdcardStorage);
+				  		}
+
+				  		for (int i2=0; i2<64 && buffer[i2] != 0xff; ++i2)//buffer[i2] >= 30 && buffer[i2] <= 0x7a ; ++i2)
+				  			printf("%c", buffer[i2]);
+
+				  		//for(int i2 = 0; i2 < 16; ++i2)
+				  			//printf("%c", alt_up_sd_card_read(sdcardStorage));
+				  		printf("\n");
+				  		  //printf("%c", alt_up_sd_card_read(sdcardStorage));
+				  		//for(int i=0; (i<16) && (buffer[i] != '\n'); ++i)
+				  			//readBuffer[0][i] = buffer[i];
+				  		readOnce = true;
+				  	  }
+				  	  else if(!readOnce)
+				  	  {
+				  		fileOpened = sdcardTest();
+				  	  }
 				      break;
 		  }
 	}
@@ -274,7 +317,21 @@ void selectionMenu()
 	alt_up_character_lcd_init (char_lcd_dev);
 }
 //------------------------------------------------------------------//
-
+bool sdcardTest()
+{
+	//alt_up_sd_card_fclose("Testing1.txt");//release contents of file accessed in previous runs
+	sdcardStorage = alt_up_sd_card_fopen("Testing.txt", false);
+	if(sdcardStorage < 0)
+	{
+		printf("Failed to access Testing.txt file\n");
+		return false;
+	}
+	else
+	{
+		printf("Successfully accessed Testing.txt file\n");
+		return true;
+	}
+}
 //------------------------------------------------------------------//
 
 //------------------------------------------------------------------//
