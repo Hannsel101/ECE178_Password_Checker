@@ -33,7 +33,8 @@ void initHexDisplays();//clear all the hex displays
 void initLEDs();//Clear green and red leds
 void timerSetup(alt_u32 period);//Setup high res timer in milliseconds
 void startDelay();//Runs the timer for a set amount of time
-
+void displayfail();
+void displaypass();
 
 
 void keyInput();
@@ -49,7 +50,7 @@ void selectionMenu();
 bool sdcardTest();//Checks if card can access a file and returns true if it can, otherwise false
 
 //State Machine that gives time slices to each state before switching to the next
-void scheduler(alt_u8 *state);
+//void scheduler(alt_u8 *state);
 
 int i = 0;//For testing scheduler during development LEDR
 int k = 0;//For testing scheduler during development LEDG
@@ -58,7 +59,8 @@ alt_up_sd_card_dev *device_reference = NULL;//SDCARD Pointer
 
 int main()
 {
-
+	//declare varialbes
+	int key_input, release, navigator = 0; //handling inputs from pushbuttons.
 	int connected = 0;
 	device_reference = alt_up_sd_card_open_dev("/dev/Altera_UP_SD_Card_Avalon_Interface_0");
 
@@ -78,8 +80,7 @@ int main()
 	initHexDisplays();
 	initLEDs();
 
-	timerSetup(2000);//2 seconds for the welcome message
-	IOWR(HIGH_RES_TIMER_BASE, 1, 4);//Start timer
+
 
 	//Control Variables
 	alt_u8 state = 0;
@@ -92,17 +93,20 @@ int main()
 	volatile unsigned char readBuffer[4][16];//Holds up to four rows of values to output to lcd
 
 	//main event loop
-	while (1)
-	{
-		  scheduler(&state);
-
-		  switch(state)
-		  {
-		  	  case(0)://SD Card Operations
-		  			  switch(sdState)//Current operation to be handled by SDcard
-		  			  {
-						  case (0)://Check for SDCard
-								if ((connected == 0) && (alt_up_sd_card_is_Present()))
+//	while (1)
+//	{
+//		  scheduler(&state);
+//
+//		  switch(state)
+//		  {
+//		  	  case(0)://SD Card Operations
+//		  			  switch(sdState)//Current operation to be handled by SDcard
+//		  			  {
+//						  case (0)://Check for SDCard
+//***************//
+//Check for SD Card
+	while (connected == 0){
+	if ((connected == 0) && (alt_up_sd_card_is_Present()))
 								{
 								   printf("Card connected.\n");
 								   if (alt_up_sd_card_is_FAT16())
@@ -118,33 +122,54 @@ int main()
 								else if ((connected == 1) && (alt_up_sd_card_is_Present() == false))
 								{
 								   printf("Card disconnected.\n");
+								   printf("Please insert an SD card\n");
 								   connected = 0;
 								}
-						  	    break;
-						  case(1)://Read from SDcard
-								//for(int i=0; (i<16) && (readBuffer[i] != '\n'); ++i)
+	}
+
+//						  case(1)://Read from SDcard
+//								//for(int i=0; (i<16) && (readBuffer[i] != '\n'); ++i)
 						  			//printf("readBuffer: %c", readBuffer[0][i]);
 						  	  	//printf("\n");
-							    break;
-		  			  }
-		  			  break;
-			  case(1):
-			  	  	  switch(displayState)
-			  	  	  {
-			  	  	  	  case(0)://Welcome Screen
-			  	  	  			  displayWelcome();
-			  	  	  	  	  	  startDelay();
-			  	  	  	  	  	  displayState += 1;
-			  	  	  	  	  	  break;
-			  	  	  	  case(1)://Selection Menu
-			  	  	  			  selectionMenu();
-			  	  	  	  	  	  break;
-			  	  	  	  default:
-			  	  	  		  	  break;
-			  	  	  }
+//							    break;
+//		  			  }
+//		  			  break;
+//			  case(1):
+//			  	  	  switch(displayState)
+//			  	  	  {
+//Welcome Screen
+displayWelcome();
+timerSetup(2000);//2 seconds for the welcome message
+IOWR(HIGH_RES_TIMER_BASE, 1, 4);//Start timer
+startDelay();
+//			  	  	  	  	  	  displayState += 1;
+	//		  	  	  	  	  	  break;
+//Selection Menu
+selectionMenu();
+//wait for input/poll keys
+	while (navigator == 0)
+	{ //until an option is picked
+		key_input = IORD_ALTERA_AVALON_PIO_DATA(KEY_0_BASE); //wait for input
+	if (key_input == 7 || key_input == 11) //if a valid key is pressed.
+	{
+	release = key_input;
+	while(release != 15){ //wait for the key to be released
+	release = IORD_ALTERA_AVALON_PIO_DATA(KEY_0_BASE);} //wait for key release
+	switch (key_input){
+		case 11:{
+			printf("You pressed Login\n");
+			break;
+	}
+		case 7:{
+			printf("You pressed Register.\n");
+			break;
+		}
+		}
+	} //end IF key_input == 8 or 4;
 
-					  break;
-			  case(2):
+	}
+
+/*			  case(2):
 					  // Initialize the character display
 					  //alt_up_character_lcd_init (char_lcd_dev);
 					  if(k < 1024)
@@ -187,10 +212,11 @@ int main()
 				      break;
 		  }
 	}
-
+*/
 	return 0;
 }
-
+///////////END MAIN ////////////////
+/*************************************/
 void keyInput()
 {
 
@@ -237,6 +263,28 @@ void initHexDisplays()
 	IOWR(HEX_5_BASE, 0, 0xFF);
 	IOWR(HEX_6_BASE, 0, 0xFF);
 	IOWR(HEX_7_BASE, 0, 0xFF);
+}
+//------------------------------------------------------------------//
+void displaypass()
+{
+	//Display SUCCESS
+
+	IOWR_ALTERA_AVALON_PIO_DATA(HEX_6_BASE,0b00010010); //display the S
+	IOWR_ALTERA_AVALON_PIO_DATA(HEX_5_BASE,0b01000001); //display the U
+	IOWR_ALTERA_AVALON_PIO_DATA(HEX_4_BASE,0b01000110); //display the C
+	IOWR_ALTERA_AVALON_PIO_DATA(HEX_3_BASE,0b01000110); //display the C
+	IOWR_ALTERA_AVALON_PIO_DATA(HEX_2_BASE,0b00000110); //display the E
+	IOWR_ALTERA_AVALON_PIO_DATA(HEX_1_BASE,0b00010010); //display the S
+	IOWR_ALTERA_AVALON_PIO_DATA(HEX_0_BASE,0b00010010); //display the S
+}
+//------------------------------------------------------------------//
+void displayfail()
+{
+	//Display FAIL
+	IOWR_ALTERA_AVALON_PIO_DATA(HEX_3_BASE,0b00001110); //display the F
+	IOWR_ALTERA_AVALON_PIO_DATA(HEX_2_BASE,0b00001000); //display the A
+	IOWR_ALTERA_AVALON_PIO_DATA(HEX_1_BASE,0b01001111); //display the I
+	IOWR_ALTERA_AVALON_PIO_DATA(HEX_0_BASE,0b01000111); //display the L
 }
 //------------------------------------------------------------------//
 void initLEDs()
@@ -315,7 +363,13 @@ void promptPassword()
 void selectionMenu()
 {
 	alt_up_character_lcd_init (char_lcd_dev);
+	alt_up_character_lcd_string(char_lcd_dev, "1: Login");
+
+	alt_up_character_lcd_set_cursor_pos(char_lcd_dev, 0, 1);
+	alt_up_character_lcd_string(char_lcd_dev, "2: Register");
 }
+//------------------------------------------------------------------//
+
 //------------------------------------------------------------------//
 bool sdcardTest()
 {
