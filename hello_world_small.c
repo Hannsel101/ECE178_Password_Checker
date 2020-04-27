@@ -52,8 +52,9 @@ bool sdcardTest();//Checks if card can access a file and returns true if it can,
 //State Machine that gives time slices to each state before switching to the next
 //void scheduler(alt_u8 *state);
 
-int i = 0;//For testing scheduler during development LEDR
-int k = 0;//For testing scheduler during development LEDG
+
+//int i = 0;//For testing scheduler during development LEDR
+//int k = 0;//For testing scheduler during development LEDG
 alt_up_character_lcd_dev * char_lcd_dev;//LCD pointer
 alt_up_sd_card_dev *device_reference = NULL;//SDCARD Pointer
 
@@ -62,6 +63,9 @@ int main()
 	//declare varialbes
 	int key_input, release, navigator = 0; //handling inputs from pushbuttons.
 	int connected = 0;
+	char username [15]="";
+
+
 	device_reference = alt_up_sd_card_open_dev("/dev/Altera_UP_SD_Card_Avalon_Interface_0");
 
 	//alt_up_character_lcd_dev * char_lcd_dev;
@@ -139,7 +143,7 @@ int main()
 //			  	  	  {
 //Welcome Screen
 displayWelcome();
-timerSetup(2000);//2 seconds for the welcome message
+timerSetup(4000);//2 seconds for the welcome message
 IOWR(HIGH_RES_TIMER_BASE, 1, 4);//Start timer
 startDelay();
 //			  	  	  	  	  	  displayState += 1;
@@ -158,17 +162,41 @@ selectionMenu();
 	switch (key_input){
 		case 11:{
 			printf("You pressed Login\n");
+			navigator = 2;
 			break;
 	}
 		case 7:{
 			printf("You pressed Register.\n");
+			navigator = 1;
 			break;
 		}
 		}
 	} //end IF key_input == 8 or 4;
 
 	}
-
+	promptUsername();
+	while (navigator == 1);{
+		//until an option is picked
+				key_input = IORD_ALTERA_AVALON_PIO_DATA(KEY_0_BASE); //wait for input
+			if (key_input == 7 || key_input == 11) //if a valid key is pressed.
+			{
+			release = key_input;
+			while(release != 15){ //wait for the key to be released
+			release = IORD_ALTERA_AVALON_PIO_DATA(KEY_0_BASE);} //wait for key release
+				switch (key_input){
+		case 11:{
+			printf("You pressed a key\n");
+			navigator = 0;
+			break;
+	}
+		case 7:{
+			printf("You pressed a key.\n");
+			navigator = 0;
+			break;
+		}
+		}
+	}//end IF KEY
+	}
 /*			  case(2):
 					  // Initialize the character display
 					  //alt_up_character_lcd_init (char_lcd_dev);
@@ -348,16 +376,72 @@ void displayWelcome()
 //------------------------------------------------------------------//
 void promptUsername()
 {
+//	char test[] = "James";
+int	i,k,key_in, release = 0;
+
+	char alphabet[26] = "abcdefghijklmnopqrstuvwxyz";
+	char username[16] = "";//temporary username
+	username[k] = alphabet[i];
+	int done = 0;
+	printf("Use Key3 for next character.\nUse Key2 for previous character.\n");
+	printf("Use Key2 for next input.\nUse Key1 to enter selection. \n");
+	while (done == 0){
 	// Write "Enter Username:" in the first row
 	alt_up_character_lcd_init (char_lcd_dev);
 	alt_up_character_lcd_string(char_lcd_dev, "Enter Username:");
+
+	alt_up_character_lcd_set_cursor_pos(char_lcd_dev, 0, 1);
+	alt_up_character_lcd_string(char_lcd_dev, username);
+	key_in = IORD_ALTERA_AVALON_PIO_DATA(KEY_0_BASE); //read pushbuttons
+		while (key_in == 15){//wait for input
+			key_in = IORD_ALTERA_AVALON_PIO_DATA(KEY_0_BASE);//read pushbuttons
+			release = key_in;
+		}
+		while(release != 15){ //wait for the key to be released
+			release = IORD_ALTERA_AVALON_PIO_DATA(KEY_0_BASE);} //wait for key release
+		switch (key_in){
+			case 7: {
+				if (i<25)
+					i = i+ 1;
+				else
+					i = 0;
+				username[k] = alphabet[i];
+				break;
+			} //end case 0
+			case 11:{
+				if (i>0)
+					i = i-1;
+				else
+					i = 25;
+				username[k] = alphabet[i];
+				break;
+			}//end case 11
+			case 13:{
+				if (k <15){
+					k = k+1;
+					i = 0;
+					username[k] = alphabet[i];
+				}
+				else
+					printf("You have already entered the maximum number of characters.\n");
+				break;
+			}//end case 13
+			case 14:{
+				done = 1;
+				break;
+			}
+		}//end switch key_in
+	} //end while done == 0
+
 }
 //------------------------------------------------------------------//
 void promptPassword()
 {
+
 	// Write "Enter Password:" in the first row
 	alt_up_character_lcd_init (char_lcd_dev);
 	alt_up_character_lcd_string(char_lcd_dev, "Enter Password:");
+
 }
 //------------------------------------------------------------------//
 void selectionMenu()
