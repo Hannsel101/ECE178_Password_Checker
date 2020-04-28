@@ -1,5 +1,5 @@
 //PasswordCheckerV2
-//By: Hannselthill Camacho
+//By: Hannselthill Camacho and James Dols
 //April 23, 2020
 
 #include "sys/alt_stdio.h"
@@ -49,12 +49,6 @@ void selectionMenu();
 //SDCard Functions
 bool sdcardTest();//Checks if card can access a file and returns true if it can, otherwise false
 
-//State Machine that gives time slices to each state before switching to the next
-//void scheduler(alt_u8 *state);
-
-
-//int i = 0;//For testing scheduler during development LEDR
-//int k = 0;//For testing scheduler during development LEDG
 alt_up_character_lcd_dev * char_lcd_dev;//LCD pointer
 alt_up_sd_card_dev *device_reference = NULL;//SDCARD Pointer
 
@@ -96,18 +90,7 @@ int main()
 	//Buffers
 	volatile unsigned char readBuffer[4][16];//Holds up to four rows of values to output to lcd
 
-	//main event loop
-//	while (1)
-//	{
-//		  scheduler(&state);
-//
-//		  switch(state)
-//		  {
-//		  	  case(0)://SD Card Operations
-//		  			  switch(sdState)//Current operation to be handled by SDcard
-//		  			  {
-//						  case (0)://Check for SDCard
-//***************//
+
 //Check for SD Card
 	while (connected == 0){
 	if ((connected == 0) && (alt_up_sd_card_is_Present()))
@@ -131,16 +114,7 @@ int main()
 								}
 	}
 
-//						  case(1)://Read from SDcard
-//								//for(int i=0; (i<16) && (readBuffer[i] != '\n'); ++i)
-						  			//printf("readBuffer: %c", readBuffer[0][i]);
-						  	  	//printf("\n");
-//							    break;
-//		  			  }
-//		  			  break;
-//			  case(1):
-//			  	  	  switch(displayState)
-//			  	  	  {
+
 //Welcome Screen
 displayWelcome();
 timerSetup(4000);//2 seconds for the welcome message
@@ -197,50 +171,6 @@ selectionMenu();
 		}
 	}//end IF KEY
 	}
-/*			  case(2):
-					  // Initialize the character display
-					  //alt_up_character_lcd_init (char_lcd_dev);
-					  if(k < 1024)
-					    IOWR(LEDS_BASE, 0 , k);
-					  else
-					    k = 0;
-					  ++k;
-					  break;
-			  case(3):
-					  if(i < 256)
-					    IOWR(LEDG_BASE, 0, i);
-					  else
-					    i = 0;
-					  ++i;
-					  break;
-			  default://FOR TESTING NOT ACTUAL CODE TO GO IN THIS STATE
-				  	  if(fileOpened && !readOnce)
-				  	  {
-				  		printf("readBuffer: ");
-				  		for(int i2=0; (i2<64) && (buffer[i2] != -1); ++i2)
-				  		{
-				  			buffer[i2] = alt_up_sd_card_read(sdcardStorage);
-				  		}
-
-				  		for (int i2=0; i2<64 && buffer[i2] != 0xff; ++i2)//buffer[i2] >= 30 && buffer[i2] <= 0x7a ; ++i2)
-				  			printf("%c", buffer[i2]);
-
-				  		//for(int i2 = 0; i2 < 16; ++i2)
-				  			//printf("%c", alt_up_sd_card_read(sdcardStorage));
-				  		printf("\n");
-				  		  //printf("%c", alt_up_sd_card_read(sdcardStorage));
-				  		//for(int i=0; (i<16) && (buffer[i] != '\n'); ++i)
-				  			//readBuffer[0][i] = buffer[i];
-				  		readOnce = true;
-				  	  }
-				  	  else if(!readOnce)
-				  	  {
-				  		fileOpened = sdcardTest();
-				  	  }
-				      break;
-		  }
-	}
-*/
 	return 0;
 }
 ///////////END MAIN ////////////////
@@ -320,49 +250,7 @@ void initLEDs()
 	IOWR(LEDS_BASE, 0, 0);
 	IOWR(LEDG_BASE, 0, 0);
 }
-//------------------------------------------------------------------//
-void scheduler(alt_u8 *state)
-{
-	if(IORD(HIGH_RES_TIMER_BASE, 0) & 1)
-	{
-		if(*state <= NUM_STATES)
-		{
-			*state += 1;//Go to next state
-			IOWR(HIGH_RES_TIMER_BASE, 0, 1);//Reset Time out bit
-		}
-		else
-		{
-			*state = 0;//Reset the state machine
-			IOWR(HIGH_RES_TIMER_BASE, 0, 1);//Reset Time out bit
-		}
 
-		switch(*state)
-			{
-				case 0://Check if SD card is still inserted
-					timerSetup(4);//Timer set to 400ns
-					IOWR(HIGH_RES_TIMER_BASE, 1, 4);//Start the timer in control register
-					break;
-				case 1://display contents on screen
-					timerSetup(4);//Timer set to 400ns
-					IOWR(HIGH_RES_TIMER_BASE, 1, 4);//Start the timer in control register
-					break;
-				case 2://Poll User input
-					timerSetup(100);//Timer set to 10ms
-					IOWR(HIGH_RES_TIMER_BASE, 1, 4);//Start the timer in control register
-					break;
-				case 3://Check valid input from user
-					timerSetup(20);//Timer set to 2ms
-					IOWR(HIGH_RES_TIMER_BASE, 1, 4);//Start the timer in control register
-					break;
-				default:
-					timerSetup(500);//Timer set to 50ms
-					IOWR(HIGH_RES_TIMER_BASE, 1, 4);//Start the timer in control register
-			}
-	}
-	else
-	{
-	}
-}
 //------------------------------------------------------------------//
 void displayWelcome()
 {
@@ -457,7 +345,6 @@ void selectionMenu()
 //------------------------------------------------------------------//
 bool sdcardTest()
 {
-	//alt_up_sd_card_fclose("Testing1.txt");//release contents of file accessed in previous runs
 	sdcardStorage = alt_up_sd_card_fopen("Testing.txt", false);
 	if(sdcardStorage < 0)
 	{
