@@ -14,13 +14,6 @@
 #include "altera_up_avalon_character_lcd.h"
 #include <altera_up_sd_card_avalon_interface.h>
 
-//Hardware Constant Defines
-#define SDCARD 0x800
-#define READ_BLOCK 0x11
-#define SECTOR 480
-
-//State Scheduler Defines
-#define NUM_STATES 4
 
 //Global Variables
 volatile unsigned char buffer[64];//Buffer for input
