@@ -163,26 +163,35 @@ int main()
 
 		}
 
-		promptUsername(0);
-		if(checkUser())
+		while(navigator == 2)//Login Has been selected
 		{
-			printf("Found a match\n");
-			promptUsername(1);
+			promptUsername(0);//Enter username
+			initHexDisplays();//Clear the fail or success when trying again.
 
-			if(checkPass())
+			if(checkUser())
 			{
-				printf("Success\n");
-				displaypass();
+				printf("\nValid Username, please enter password.\n");
+				promptUsername(1);//Enter Password
+
+				if(checkPass())
+				{
+					printf("\nSuccess\n");
+					displaypass();
+				}
+				else
+				{
+					printf("\nFail! Incorrect Password.\n");
+					displayfail();
+				}
 			}
 			else
 			{
+				printf("\n\nNot a valid user. Please try again\n");
+				username[0] = '\0';
+				password[0] = '\0';
 				displayfail();
 			}
-		}
-		else
-		{
-			printf("No user in sdcard\n");
-			displayfail();
+
 		}
 
 		while (navigator == 1)//;
@@ -380,30 +389,16 @@ void promptUsername(int operation)
 			}//end case 13
 			case 14:
 			{
-
+				userEntry[k+1] = '\0';//Null Terminate the char array
 				if(!operation)
 				{
-					for(int i=0; i<16; ++i)
-					{
-						if(userEntry[i] == '\0')
-						{
-							username[i] = '\0';
-							break;
-						}
-						username[i] = userEntry[k];
-					}
+					for(int j=0; j<=k+1; ++j)
+						username[j] = userEntry[j];
 				}
 				else
 				{
-					for(int i=0; i<16; ++i)
-					{
-						if(userEntry[i] == '\0')
-						{
-							password[i] = '\0';
-							break;
-						}
-						password[i] = userEntry[k];
-					}
+					for(int j=0; j<=k+1; ++j)
+						password[j] = userEntry[j];
 				}
 				done = 1;
 				break;
@@ -501,9 +496,9 @@ bool checkUser()
 
 	for(int i = 0; i <=numberOfUsers; ++i)
 	{
-		for(int k=0; sdBuffer[i][k] != '\0'; ++k)
+		for(int k=0; k<16; ++k)//sdBuffer[i][k] != '\0'; ++k)
 		{
-			if(username[k] == '\0')//if end of username reached
+			if((username[k] == '\0') && (sdBuffer[i][k] == ' '))//if end of username reached and whitespace reached
 			{
 					userIndex = i;
 					return true;//Found a match
@@ -521,19 +516,25 @@ bool checkPass()
 	{
 
 		sdBuffer[userIndex][i];
+
 		if(sdBuffer[userIndex][i] == ' ')
 		{
 			++i;
 			for(int k=0; k<16; ++k, ++i)
 			{
-				if(sdBuffer[userIndex][i] != password[k])
+				if(password[k] == '\0')
+				{
+					if(sdBuffer[userIndex][i] == '\n' || sdBuffer[userIndex][i] < 0x30 || sdBuffer[userIndex][i] > 0x7a)
+					{
+						return true;
+					}
+					return false;
+				}
+				else if(sdBuffer[userIndex][i] != password[k])
 				{
 					return false;
 				}
-				else if(password[k] == '\0')
-				{
-					return true;
-				}
+
 			}
 		}
 	}
@@ -542,6 +543,8 @@ bool checkPass()
 //------------------------------------------------------------------//
 void printUsers()
 {
+
+	printf("\n------SDCARD Contents-----\n");
 	for(int i = 0; i<=numberOfUsers; ++i)
 	{
 		printf("User%i: ", i);
@@ -551,4 +554,5 @@ void printUsers()
 		}
 		printf("\n");
 	}
+	printf("--------------------------\n");
 }
