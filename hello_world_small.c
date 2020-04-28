@@ -16,9 +16,6 @@
 
 
 //Global Variables
-volatile unsigned char buffer[64];//Buffer for input
-alt_u8 numChars = 0;//Number of characters currently stored in buffer
-unsigned char *bufferIndex;//determines what location the user is attempting to change
 volatile short int sdcardStorage;
 
 //Hardware Functions
@@ -29,9 +26,6 @@ void startDelay();//Runs the timer for a set amount of time
 void displayfail();
 void displaypass();
 
-
-void keyInput();
-void printBuffer();
 
 //LCD Functions
 void displayWelcome();
@@ -55,7 +49,6 @@ int main()
 
 	device_reference = alt_up_sd_card_open_dev("/dev/Altera_UP_SD_Card_Avalon_Interface_0");
 
-	//alt_up_character_lcd_dev * char_lcd_dev;
 	// open the Character LCD port
 	char_lcd_dev = alt_up_character_lcd_open_dev ("/dev/character_lcd_0");
 
@@ -74,9 +67,6 @@ int main()
 
 
 	//Control Variables
-	alt_u8 state = 0;
-	alt_u8 displayState = 0;
-	alt_u8 sdState = 0;
 	bool fileOpened = false;
 	bool readOnce = false;
 
@@ -92,7 +82,6 @@ int main()
 								   if (alt_up_sd_card_is_FAT16())
 								   {
 									   printf("FAT16 file system detected.\n");
-									   sdState += 1;//Everything checks out move on to next state
 								   } else
 								   {
 									   printf("Unknown file system.\n");
@@ -113,8 +102,7 @@ displayWelcome();
 timerSetup(4000);//2 seconds for the welcome message
 IOWR(HIGH_RES_TIMER_BASE, 1, 4);//Start timer
 startDelay();
-//			  	  	  	  	  	  displayState += 1;
-	//		  	  	  	  	  	  break;
+
 //Selection Menu
 selectionMenu();
 //wait for input/poll keys
@@ -168,10 +156,6 @@ selectionMenu();
 }
 ///////////END MAIN ////////////////
 /*************************************/
-void keyInput()
-{
-
-}
 //------------------------------------------------------------------//
 void timerSetup(alt_u32 period)
 {
