@@ -37,8 +37,9 @@ void displaypass();
 //LCD Functions
 void displayWelcome();
 void promptUsername(int operation);
-void promptPassword();
 void selectionMenu();
+void userMenu(int page);
+
 
 //SDCard Functions
 bool checkForSDcard();//Checks if the SD card is inserted or removed.
@@ -55,7 +56,7 @@ alt_up_sd_card_dev *device_reference = NULL;//SDCARD Pointer
 int main()
 {
 	//declare varialbes
-	int key_input, release, navigator = 0; //handling inputs from pushbuttons.
+	int key_input, release, navigator, page; //handling inputs from pushbuttons.
 	int connected = 0;
 
 	device_reference = alt_up_sd_card_open_dev("/dev/Altera_UP_SD_Card_Avalon_Interface_0");
@@ -125,16 +126,20 @@ int main()
 
 	//Welcome Screen
 	displayWelcome();
-	timerSetup(4000);//2 seconds for the welcome message
+	timerSetup(6000);// delay for the welcome message
 	IOWR(HIGH_RES_TIMER_BASE, 1, 4);//Start timer
 	startDelay();
-
+	navigator = 0;
+	page = 0;
+	release = 0;
+	key_input = 15;
 	//Main Event Loop
 	while(1)
 	{
-		//Selection Menu
-		selectionMenu();
-		//wait for input/poll keys
+		//Selection Menu if not already logged in.
+		if (navigator == 0)
+			selectionMenu();
+
 		while (navigator == 0)
 		{ //until an option is picked
 			key_input = IORD_ALTERA_AVALON_PIO_DATA(KEY_0_BASE); //wait for input
@@ -148,22 +153,22 @@ int main()
 				{
 					case 11:
 					{
-						printf("You pressed Login\n");
+						printf("You pressed Register\n");
 						navigator = 2;
 						break;
 					}
 					case 7:
 					{
-						printf("You pressed Register.\n");
+						printf("You pressed Login.\n");
 						navigator = 1;
 						break;
 					}
 				}
-			} //end IF key_input == 8 or 4;
+			} //end IF key_input == 7 or 11;
 
 		}
 
-		while(navigator == 2)//Login Has been selected
+		while(navigator == 1)//Login Has been selected
 		{
 			promptUsername(0);//Enter username
 			initHexDisplays();//Clear the fail or success when trying again.
@@ -177,6 +182,8 @@ int main()
 				{
 					printf("\nSuccess\n");
 					displaypass();
+					navigator = 3; //display the user menu
+					key_input = 15; //clear previous key inputs.
 				}
 				else
 				{
@@ -194,33 +201,130 @@ int main()
 
 		}
 
-		while (navigator == 1)//;
+		while (navigator == 2)//Register has been selected.
 		{
-			//until an option is picked
-			key_input = IORD_ALTERA_AVALON_PIO_DATA(KEY_0_BASE); //wait for input
-			if (key_input == 7 || key_input == 11) //if a valid key is pressed.
+			promptUsername(0);//Enter username
+			if(checkUser())
 			{
-				release = key_input;
-				while(release != 15)
-				{ //wait for the key to be released
-					release = IORD_ALTERA_AVALON_PIO_DATA(KEY_0_BASE);} //wait for key release
-					switch (key_input)
-					{
-						case 11:
-						{
-							printf("You pressed a key\n");
-							navigator = 0;
-							break;
-						}
-						case 7:
-						{
-							printf("You pressed a key.\n");
-							navigator = 0;
-							break;
-						}
-					}
-			}//end IF KEY
+				printf("\nThat username is already taken. Please enter a different username.\n");
+				username[0] = '\0'; //clear the username array
+			}
+			else
+			{
+				printf("\nValid Username, please enter a password.\n");
+				promptUsername(1);//Enter Password
+				navigator = 0;
+			}
+
+
+			//function call here to write username and password to the SD card.
+
 		}
+
+		while(navigator == 3)//User is logged in
+		{
+		if (!page)
+		{
+			userMenu(page); //displays page0 of the user menu
+			key_input = IORD_ALTERA_AVALON_PIO_DATA(KEY_0_BASE); //wait for input
+			while (key_input == 15)
+			{
+				key_input = IORD_ALTERA_AVALON_PIO_DATA(KEY_0_BASE); //wait for input
+				release = key_input;
+			}
+			if (key_input == 7 || key_input == 11 || key_input == 13) //if a valid key is pressed.
+			{
+				while(release != 15){ //wait for the key to be released
+				release = IORD_ALTERA_AVALON_PIO_DATA(KEY_0_BASE);} //wait for key release
+				switch (key_input)
+				{
+					case 7:
+						{
+							//sequence to write data to the sd card.
+							printf("\nAsk for user data and write to SD\n");
+							break;
+						}
+					case 11:
+					{
+						//read data from the SD card
+						printf("\nThis should output data user has written to SD\n");
+						break;
+					}
+					case 13:
+					{
+						//go to next menu page
+						page = 1;
+						break;
+					}
+				}//end switch key_input
+			}// end if key_input 7,11,13 page0
+		}// if !Page
+		if (page) //page 1
+				{
+					userMenu(page); //displays page1 of the user menu Reset Password/Logout
+					key_input = IORD_ALTERA_AVALON_PIO_DATA(KEY_0_BASE); //wait for input
+					while (key_input == 15)
+					{
+						key_input = IORD_ALTERA_AVALON_PIO_DATA(KEY_0_BASE); //wait for input
+						release = key_input;
+					}
+					if (key_input == 7 || key_input == 11 || key_input == 13) //if a valid key is pressed.
+					{
+						while(release != 15){ //wait for the key to be released
+						release = IORD_ALTERA_AVALON_PIO_DATA(KEY_0_BASE);} //wait for key release
+						switch (key_input)
+						{
+							case 7:
+								{
+									//Password reset.
+									printf("\nPlease enter a new password\n");
+									promptUsername(1); //prompts for a password entry
+		//****************************//need to write the password to the Sd card.
+									alt_up_character_lcd_init(char_lcd_dev);
+									alt_up_character_lcd_string(char_lcd_dev, "PASSWORD");
+
+									alt_up_character_lcd_set_cursor_pos(char_lcd_dev, 0, 1);
+									alt_up_character_lcd_string(char_lcd_dev, "CHANGED");
+									timerSetup(6000);// delay for the logout message
+									IOWR(HIGH_RES_TIMER_BASE, 1, 4);//Start timer
+									startDelay();
+									printf("\nPassword Changed Please login again.\n");
+									navigator = 0; //reset navigator
+									page = 0;	//reset page
+									username[0] = '\0'; //clear username
+									password[0] = '\0'; //clear password
+									break;
+								}
+							case 11:
+							{
+								//Logout
+								alt_up_character_lcd_init(char_lcd_dev);
+								alt_up_character_lcd_string(char_lcd_dev, "LOGOUT");
+
+								alt_up_character_lcd_set_cursor_pos(char_lcd_dev, 0, 1);
+								alt_up_character_lcd_string(char_lcd_dev, "SUCCESSFUL");
+								timerSetup(6000);// delay for the logout message
+								IOWR(HIGH_RES_TIMER_BASE, 1, 4);//Start timer
+								startDelay();
+								printf("\nYou have been logged out.\n");
+								navigator = 0; //reset navigator
+								page = 0;	//reset page
+								username[0] = '\0'; //clear username
+								password[0] = '\0'; //clear password
+
+								break;
+							}
+							case 13:
+							{
+								//go to next menu page
+								page = 0;
+								break;
+							}
+						}//end switch key_input
+					}// end if key_input 7,11,13 page0
+				}// if !Page
+		} //END while navigator = 3
+
 	}//END MAIN EVENT LOOP
 
 	return 0;
@@ -318,7 +422,10 @@ void promptUsername(int operation)
 	//operation = 1 for enter password
 
 	//	char test[] = "James";
-	int	i,k,key_in, release = 0;
+	int	i = 0;
+	int k = 0;
+	int key_in = 0;
+	int release = 0;
 
 	char alphabet[26] = "abcdefghijklmnopqrstuvwxyz";
 
@@ -327,8 +434,8 @@ void promptUsername(int operation)
 	//username[k] = alphabet[i];
 
 	int done = 0;
-	printf("Use Key3 for next character.\nUse Key2 for previous character.\n");
-	printf("Use Key2 for next input.\nUse Key1 to enter selection. \n");
+	printf("\nUse Key3 for next character.\nUse Key2 for previous character.\n");
+	printf("Use Key1 for next input.\nUse Key0 to enter selection. \n\n");
 
 	while (done == 0)
 	{
@@ -407,22 +514,38 @@ void promptUsername(int operation)
 	} //end while done == 0
 }
 //------------------------------------------------------------------//
-void promptPassword()
-{
-	// Write "Enter Password:" in the first row
-	alt_up_character_lcd_init (char_lcd_dev);
-	alt_up_character_lcd_string(char_lcd_dev, "Enter Password:");
-}
-//------------------------------------------------------------------//
+
 void selectionMenu()
 {
 	alt_up_character_lcd_init (char_lcd_dev);
-	alt_up_character_lcd_string(char_lcd_dev, "1: Login");
+	alt_up_character_lcd_string(char_lcd_dev, "3: Login");
 
 	alt_up_character_lcd_set_cursor_pos(char_lcd_dev, 0, 1);
 	alt_up_character_lcd_string(char_lcd_dev, "2: Register");
 }
 //------------------------------------------------------------------//
+void userMenu(int page)
+{
+	if (!page)//page0
+	{
+		printf("Press Key 1 for more options\n");
+		alt_up_character_lcd_init (char_lcd_dev);
+		alt_up_character_lcd_string(char_lcd_dev, "3: Write file");
+
+		alt_up_character_lcd_set_cursor_pos(char_lcd_dev, 0, 1);
+		alt_up_character_lcd_string(char_lcd_dev, "2: Read file");
+	}
+	else
+	{
+		printf("Press Key 1 for previous options\n");
+		alt_up_character_lcd_init (char_lcd_dev);
+		alt_up_character_lcd_string(char_lcd_dev, "3: Change Pswd");
+
+		alt_up_character_lcd_set_cursor_pos(char_lcd_dev, 0, 1);
+		alt_up_character_lcd_string(char_lcd_dev, "2: Logout");
+	}
+}
+
 bool sdcardTest()
 {
 	sdcardStorage = alt_up_sd_card_fopen("Testing.txt", false);
@@ -491,7 +614,7 @@ void readUsers()
 
 }
 //------------------------------------------------------------------//
-bool checkUser()
+bool checkUser()//verifies that a username exists
 {
 
 	for(int i = 0; i <=numberOfUsers; ++i)
