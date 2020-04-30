@@ -217,6 +217,8 @@ alt_up_sd_card_fclose(sdcardStorage); //close the file and write the data.
 		while (navigator == 2)//Register has been selected.
 		{
 			promptUsername(0);//Enter username
+			initHexDisplays();
+			
 			if(checkUser())
 			{
 				printf("\nThat username is already taken. Please enter a different username.\n");
