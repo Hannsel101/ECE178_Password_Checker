@@ -54,6 +54,7 @@ void readUsers();
 bool checkUser();
 bool checkPass();
 void writefile();
+void readfile();
 
 alt_up_character_lcd_dev * char_lcd_dev;//LCD pointer
 alt_up_sd_card_dev *device_reference = NULL;//SDCARD Pointer
@@ -128,7 +129,9 @@ int main()
 	}
 	printUsers();
 
-//	writeToSD(); //testing writing to the SD
+	writeToSD(); //testing writing to the SD
+/////CLOSE THE OPEN SD CARD FILE
+alt_up_sd_card_fclose(sdcardStorage); //close the file and write the data.
 
 	//Welcome Screen
 	displayWelcome();
@@ -194,7 +197,10 @@ int main()
 				else
 				{
 					printf("\nFail! Incorrect Password.\n");
+					username[0] = '\0';
+					password[0] = '\0';
 					displayfail();
+					navigator = 0;
 				}
 			}
 			else
@@ -203,6 +209,7 @@ int main()
 				username[0] = '\0';
 				password[0] = '\0';
 				displayfail();
+				navigator = 0;
 			}
 
 		}
@@ -255,6 +262,7 @@ int main()
 					{
 						//read data from the SD card
 						printf("\nThis should output data user has written to SD\n");
+						readfile();
 						//readfile();
 						break;
 					}
@@ -694,14 +702,17 @@ void writefile()
 {
 	int	i = 0;
 	int k = 0;
+	int L = 0;
 	int key_in = 0;
 	int release = 0;
 	int done = 0;
-
+	char userdata[17]="";
 	char alphabet[26] = "abcdefghijklmnopqrstuvwxyz";
-	char userbuff[16] = "";
+	char userbuff[17] = "";
+	char temp[17] = "";
 	alt_up_character_lcd_init (char_lcd_dev);
 	alt_up_character_lcd_string(char_lcd_dev, "Enter Data:");
+	userbuff[k] = alphabet[i];
 	while(done == 0)
 	{
 	alt_up_character_lcd_set_cursor_pos(char_lcd_dev, 0, 1);
@@ -753,18 +764,31 @@ void writefile()
 				}//end case 13
 				case 14:
 				{
-					userbuff[k+1] = '\0';//Null Terminate the char array
+
+					userbuff[k+1] = '\n';//Null Terminate the char array
+					userbuff[k+2] = '\0';//Null Terminate the char array
+					for(int L=0; L<=k+2; ++L)
+						userdata[L] = userbuff[L];
 					done = 1;
 					break;
 				}
 			}//end switch key_in
 		} //end while done == 0
 
-	//close the open file
-	alt_up_sd_card_fclose(sdcardStorage); //close the file and write the data.
-	char *filename=username;
+
+	////this section to avoid username global variable being changed. Copy username to temp
+	for(int j=0; j<=17; ++j)
+		temp[j] = username[j];
+	///////////////////////////////////////////////////////////////
+	char *file=temp;
 	char *ext = ".txt";
-	strncat(filename, ext,4);
+	char *filename;
+	filename = malloc(strlen(file)+1+4);//make space for the new string
+	strcpy(filename,file); //copy name into the new var
+	strcat(filename, ext); //add the extension.
+
+//	strncat(filename, ext,4);
+
 	printf("The name of the file is %s: ", filename); //print the string for debug.
 //check if the file already exists.
 	usersdcardStorage = alt_up_sd_card_fopen(filename, false);
@@ -773,14 +797,77 @@ void writefile()
 		printf("Created the file %s\n", filename);
 		usersdcardStorage = alt_up_sd_card_fopen(filename, true); //create the users file
 	}
-	printf("Data entered was: %s\n", userbuff); //echo the input for debug
-	alt_up_sd_card_write(usersdcardStorage,""); //write the data to the buffer.
-		for(int i2=0; i2<16; ++i2)
+	size_t length = strlen(userdata); //get the length of userdata
+	printf("Data entered was: %s\n", userdata); //echo the input for debug
+	alt_up_sd_card_write(usersdcardStorage, "\n"); //write the data to the buffer.
+		for(int i2=0; i2<length+1; ++i2)
 		{
-			alt_up_sd_card_write(usersdcardStorage, userbuff[i2]);
+			alt_up_sd_card_write(usersdcardStorage, userdata[i2]);
 		}
 		alt_up_sd_card_fclose(usersdcardStorage); //close and write to sd card
 		filename = "\0"; //reset the filename
 	//sdBuffer[i][0] = '\0';
 
+}
+//--------------------------------------------------------------//
+void readfile()
+{
+	char extractChar;
+	char FRDBuffer[17];
+	char temp[17]="";
+	int key_in = 15;
+	int release = 0;
+	alt_u8 row = 0;
+	alt_u8 col = 0;
+	for(int j=0; j<=17; ++j)
+			temp[j] = username[j];
+		///////////////////////////////////////////////////////////////
+		char *file=temp;
+		char *ext = ".txt";
+		char *filename;
+		filename = malloc(strlen(file)+1+4);//make space for the new string
+		strcpy(filename,file); //copy name into the new var
+		strcat(filename, ext); //add the extension.
+		usersdcardStorage = alt_up_sd_card_fopen(filename, false);
+		if(usersdcardStorage < 0) //if it doesn't exist
+		{
+			printf("No user file found%s\n", filename);
+			alt_up_character_lcd_init (char_lcd_dev);
+			alt_up_character_lcd_string(char_lcd_dev, "No User");
+
+			alt_up_character_lcd_set_cursor_pos(char_lcd_dev, 0, 1);
+			alt_up_character_lcd_string(char_lcd_dev, "File Found");
+		}
+		else
+		{
+	extractChar = alt_up_sd_card_read(usersdcardStorage);//Read first character from sdcard
+		while(extractChar > -1)//End of file has been reached
+		{
+			FRDBuffer[col] = extractChar;
+			col += 1;
+
+		extractChar = alt_up_sd_card_read(usersdcardStorage);//Read another character from sdcard
+		if(extractChar == '\n')
+			extractChar = 0x0d;
+
+		}
+		alt_up_character_lcd_init (char_lcd_dev);
+		alt_up_character_lcd_string(char_lcd_dev, "File Content");
+
+		alt_up_character_lcd_set_cursor_pos(char_lcd_dev, 0, 1);
+		alt_up_character_lcd_string(char_lcd_dev, FRDBuffer);
+	}
+	printf("Press any key to continue.\n");
+	key_in = IORD_ALTERA_AVALON_PIO_DATA(KEY_0_BASE); //read pushbuttons
+	while (key_in == 15)
+	{//wait for input
+		key_in = IORD_ALTERA_AVALON_PIO_DATA(KEY_0_BASE);//read pushbuttons
+		release = key_in;
+	}
+
+	while(release != 15)
+	{ //wait for the key to be released
+		release = IORD_ALTERA_AVALON_PIO_DATA(KEY_0_BASE);
+	} //wait for key release
+	alt_up_sd_card_fclose(usersdcardStorage); //close and write to sd card
 }
