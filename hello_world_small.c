@@ -13,12 +13,13 @@
 #include "sys/alt_irq.h"
 #include "altera_up_avalon_character_lcd.h"
 #include <altera_up_sd_card_avalon_interface.h>
-
+#include <string.h>
 
 //Global Variables
 volatile short int sdcardStorage;
-char username [17]="";//16 user inputs + '\0'
-char password [17]="";
+volatile short int usersdcardStorage;
+volatile char username [17]="";//16 user inputs + '\0'
+volatile char password [17]="";
 alt_u8 userIndex = -1;
 
 //Buffers for SD card interaction
@@ -33,6 +34,9 @@ void timerSetup(alt_u32 period);//Setup high res timer in milliseconds
 void startDelay();//Runs the timer for a set amount of time
 void displayfail();
 void displaypass();
+
+
+
 
 //LCD Functions
 void displayWelcome();
@@ -49,13 +53,14 @@ void initReadBuffer();
 void readUsers();
 bool checkUser();
 bool checkPass();
+void writefile();
 
 alt_up_character_lcd_dev * char_lcd_dev;//LCD pointer
 alt_up_sd_card_dev *device_reference = NULL;//SDCARD Pointer
 
 int main()
 {
-	//declare varialbes
+	//declare variables
 	int key_input, release, navigator, page; //handling inputs from pushbuttons.
 	int connected = 0;
 
@@ -123,6 +128,7 @@ int main()
 	}
 	printUsers();
 
+//	writeToSD(); //testing writing to the SD
 
 	//Welcome Screen
 	displayWelcome();
@@ -242,12 +248,14 @@ int main()
 						{
 							//sequence to write data to the sd card.
 							printf("\nAsk for user data and write to SD\n");
+							writefile();
 							break;
 						}
 					case 11:
 					{
 						//read data from the SD card
 						printf("\nThis should output data user has written to SD\n");
+						//readfile();
 						break;
 					}
 					case 13:
@@ -421,6 +429,7 @@ void promptUsername(int operation)
 	//operation = 0 for enter username
 	//operation = 1 for enter password
 
+
 	//	char test[] = "James";
 	int	i = 0;
 	int k = 0;
@@ -569,6 +578,7 @@ void writeToSD()
 	{
 		alt_up_sd_card_write(sdcardStorage, buff[i2]);
 	}
+	alt_up_sd_card_fclose(sdcardStorage); //close the file and write the data.
 }
 //------------------------------------------------------------------//
 void initReadBuffer()
@@ -678,4 +688,99 @@ void printUsers()
 		printf("\n");
 	}
 	printf("--------------------------\n");
+}
+//----------------------------------------------------------------------//
+void writefile()
+{
+	int	i = 0;
+	int k = 0;
+	int key_in = 0;
+	int release = 0;
+	int done = 0;
+
+	char alphabet[26] = "abcdefghijklmnopqrstuvwxyz";
+	char userbuff[16] = "";
+	alt_up_character_lcd_init (char_lcd_dev);
+	alt_up_character_lcd_string(char_lcd_dev, "Enter Data:");
+	while(done == 0)
+	{
+	alt_up_character_lcd_set_cursor_pos(char_lcd_dev, 0, 1);
+			alt_up_character_lcd_string(char_lcd_dev, userbuff);
+			key_in = IORD_ALTERA_AVALON_PIO_DATA(KEY_0_BASE); //read pushbuttons
+
+			while (key_in == 15)
+			{//wait for input
+				key_in = IORD_ALTERA_AVALON_PIO_DATA(KEY_0_BASE);//read pushbuttons
+				release = key_in;
+			}
+
+			while(release != 15)
+			{ //wait for the key to be released
+				release = IORD_ALTERA_AVALON_PIO_DATA(KEY_0_BASE);
+			} //wait for key release
+
+			switch (key_in)
+			{
+				case 7:
+				{
+					if (i<25)
+						i = i+ 1;
+					else
+						i = 0;
+					userbuff[k] = alphabet[i];
+					break;
+				} //end case 0
+				case 11:
+				{
+					if (i>0)
+						i = i-1;
+					else
+						i = 25;
+					userbuff[k] = alphabet[i];
+					break;
+				}//end case 11
+				case 13:
+				{
+					if (k <15)
+					{
+						k = k+1;
+						i = 0;
+						userbuff[k] = alphabet[i];
+					}
+					else
+						printf("You have already entered the maximum number of characters.\n");
+					break;
+				}//end case 13
+				case 14:
+				{
+					userbuff[k+1] = '\0';//Null Terminate the char array
+					done = 1;
+					break;
+				}
+			}//end switch key_in
+		} //end while done == 0
+
+	//close the open file
+	alt_up_sd_card_fclose(sdcardStorage); //close the file and write the data.
+	char *filename=username;
+	char *ext = ".txt";
+	strncat(filename, ext,4);
+	printf("The name of the file is %s: ", filename); //print the string for debug.
+//check if the file already exists.
+	usersdcardStorage = alt_up_sd_card_fopen(filename, false);
+	if(usersdcardStorage < 0) //if it doesn't exist create it
+	{
+		printf("Created the file %s\n", filename);
+		usersdcardStorage = alt_up_sd_card_fopen(filename, true); //create the users file
+	}
+	printf("Data entered was: %s\n", userbuff); //echo the input for debug
+	alt_up_sd_card_write(usersdcardStorage,""); //write the data to the buffer.
+		for(int i2=0; i2<16; ++i2)
+		{
+			alt_up_sd_card_write(usersdcardStorage, userbuff[i2]);
+		}
+		alt_up_sd_card_fclose(usersdcardStorage); //close and write to sd card
+		filename = "\0"; //reset the filename
+	//sdBuffer[i][0] = '\0';
+
 }
