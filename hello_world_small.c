@@ -467,7 +467,6 @@ void promptUsername(int operation)
 
 	char userEntry[17] = "";
 	userEntry[k] = alphabet[i];
-	//username[k] = alphabet[i];
 
 	int done = 0;
 	printf("\nUse Key3 for next character.\nUse Key2 for previous character.\n");
@@ -895,7 +894,7 @@ void registerUser()
 	bool Done = false;
 	int i = 0;
 	int k = 0;
-	alt_up_sd_card_write(sdcardStorage, 0x0A);
+//	alt_up_sd_card_write(sdcardStorage, 0x0A);
 	numberOfUsers += 1;
 
 	while(!Done)
@@ -922,7 +921,7 @@ void registerUser()
 	while(!Done)
 	{
 		sdBuffer[numberOfUsers][k] = password[i];
-		printf("sdBuffer[numberOfUsers[i]\n");
+//		printf("sdBuffer[numberOfUsers[i]\n");
 		if(password[i] == '\0')
 		{
 			Done = true;
@@ -941,7 +940,7 @@ void registerUser()
 		printf("%c", sdBuffer[numberOfUsers][i]);
 		if(sdBuffer[numberOfUsers][i] == '\0')
 		{
-			printf("REACHED NULL");
+//			printf("REACHED NULL");
 			break;
 		}
 	}
