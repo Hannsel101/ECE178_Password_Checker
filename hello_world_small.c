@@ -55,7 +55,8 @@ bool checkUser();
 bool checkPass();
 void writefile();
 void readfile();
-void printUsers();				  
+void printUsers();		
+void registerUser();		  
 
 alt_up_character_lcd_dev * char_lcd_dev;//LCD pointer
 alt_up_sd_card_dev *device_reference = NULL;//SDCARD Pointer
@@ -137,7 +138,7 @@ int main()
 
 //	writeToSD(); //testing writing to the SD
 /////CLOSE THE OPEN SD CARD FILE
-alt_up_sd_card_fclose(sdcardStorage); //close the file and write the data.
+//alt_up_sd_card_fclose(sdcardStorage); //close the file and write the data.
 
 	//Welcome Screen
 	displayWelcome();
@@ -235,11 +236,8 @@ alt_up_sd_card_fclose(sdcardStorage); //close the file and write the data.
 				printf("\nValid Username, please enter a password.\n");
 				promptUsername(1);//Enter Password
 				navigator = 0;
+				registerUser();
 			}
-
-
-			//function call here to write username and password to the SD card.
-
 		}
 
 		while(navigator == 3)//User is logged in
@@ -875,4 +873,63 @@ void readfile()
 		release = IORD_ALTERA_AVALON_PIO_DATA(KEY_0_BASE);
 	} //wait for key release
 	alt_up_sd_card_fclose(usersdcardStorage); //close and write to sd card
+}
+//-----------------------------------------------//
+void registerUser()
+{
+	bool Done = false;
+	int i = 0;
+	int k = 0;
+	alt_up_sd_card_write(sdcardStorage, 0x0A);
+	numberOfUsers += 1;
+
+	while(!Done)
+	{
+		if(username[i] == '\0')
+		{
+			Done = true;
+			k = i+1;
+			sdBuffer[numberOfUsers][i] = ' ';
+		}
+		else
+		{
+			alt_up_sd_card_write(sdcardStorage, username[i]);
+			sdBuffer[numberOfUsers][i] = username[i];
+			printf("%c", sdBuffer[numberOfUsers][i]);
+			++i;
+		}
+	}
+
+	alt_up_sd_card_write(sdcardStorage, ' ');//Add a space in between username and password
+	Done = false;
+	i = 0;
+
+	while(!Done)
+	{
+		sdBuffer[numberOfUsers][k] = password[i];
+		printf("sdBuffer[numberOfUsers[i]\n");
+		if(password[i] == '\0')
+		{
+			Done = true;
+			alt_up_sd_card_write(sdcardStorage, 0x0A);
+		}
+		else
+		{
+			alt_up_sd_card_write(sdcardStorage, password[i]);
+			++i;
+			++k;
+		}
+	}
+
+	for(int i = 0;;++i)
+	{
+		printf("%c", sdBuffer[numberOfUsers][i]);
+		if(sdBuffer[numberOfUsers][i] == '\0')
+		{
+			printf("REACHED NULL");
+			break;
+		}
+	}
+	alt_up_sd_card_fclose(sdcardStorage);//save changes
+	alt_up_sd_card_fopen(sdcardStorage, false);//open file back up
 }
