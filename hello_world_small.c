@@ -703,7 +703,6 @@ void writefile()
 {
 	int	i = 0;
 	int k = 0;
-	int L = 0;
 	int key_in = 0;
 	int release = 0;
 	int done = 0;
@@ -711,6 +710,7 @@ void writefile()
 	char alphabet[26] = "abcdefghijklmnopqrstuvwxyz";
 	char userbuff[17] = "";
 	char temp[17] = "";
+//	short int nf = 0x2D;
 	alt_up_character_lcd_init (char_lcd_dev);
 	alt_up_character_lcd_string(char_lcd_dev, "Enter Data:");
 	userbuff[k] = alphabet[i];
@@ -766,9 +766,9 @@ void writefile()
 				case 14:
 				{
 
-					userbuff[k+1] = '\n';//Null Terminate the char array
-					userbuff[k+2] = '\0';//Null Terminate the char array
-					for(int L=0; L<=k+2; ++L)
+					//userbuff[k+1] = '\n';//Null Terminate the char array
+					userbuff[k+1] = '\0';//Null Terminate the char array
+					for(int L=0; L<=k+1; ++L)
 						userdata[L] = userbuff[L];
 					done = 1;
 					break;
@@ -788,9 +788,7 @@ void writefile()
 	strcpy(filename,file); //copy name into the new var
 	strcat(filename, ext); //add the extension.
 
-//	strncat(filename, ext,4);
-
-	printf("The name of the file is %s: ", filename); //print the string for debug.
+//	printf("The name of the file is %s: ", filename); //print the string for debug.
 //check if the file already exists.
 	usersdcardStorage = alt_up_sd_card_fopen(filename, false);
 	if(usersdcardStorage < 0) //if it doesn't exist create it
@@ -799,8 +797,8 @@ void writefile()
 		usersdcardStorage = alt_up_sd_card_fopen(filename, true); //create the users file
 	}
 	size_t length = strlen(userdata); //get the length of userdata
-	printf("Data entered was: %s\n", userdata); //echo the input for debug
-	alt_up_sd_card_write(usersdcardStorage, "\n"); //write the data to the buffer.
+//	printf("Data entered was: %s\n", userdata); //echo the input for debug
+//	alt_up_sd_card_write(usersdcardStorage, nf); //write the data to the buffer.
 		for(int i2=0; i2<length+1; ++i2)
 		{
 			alt_up_sd_card_write(usersdcardStorage, userdata[i2]);
@@ -818,7 +816,7 @@ void readfile()
 	char temp[17]="";
 	int key_in = 15;
 	int release = 0;
-	alt_u8 row = 0;
+//	alt_u8 row = 0;
 	alt_u8 col = 0;
 	for(int j=0; j<=17; ++j)
 			temp[j] = username[j];
@@ -832,7 +830,7 @@ void readfile()
 		usersdcardStorage = alt_up_sd_card_fopen(filename, false);
 		if(usersdcardStorage < 0) //if it doesn't exist
 		{
-			printf("No user file found%s\n", filename);
+			printf("No user file found %s\n", filename);
 			alt_up_character_lcd_init (char_lcd_dev);
 			alt_up_character_lcd_string(char_lcd_dev, "No User");
 
