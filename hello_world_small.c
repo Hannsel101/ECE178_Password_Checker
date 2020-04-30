@@ -55,6 +55,7 @@ bool checkUser();
 bool checkPass();
 void writefile();
 void readfile();
+void printUsers();				  
 
 alt_up_character_lcd_dev * char_lcd_dev;//LCD pointer
 alt_up_sd_card_dev *device_reference = NULL;//SDCARD Pointer
@@ -109,6 +110,11 @@ int main()
 		{
 		   printf("Card disconnected.\n");
 		   printf("Please insert an SD card\n");
+			alt_up_character_lcd_init(char_lcd_dev);
+			alt_up_character_lcd_string(char_lcd_dev, "Please Insert");
+
+			alt_up_character_lcd_set_cursor_pos(char_lcd_dev, 0, 1);
+			alt_up_character_lcd_string(char_lcd_dev, "an SD Card");										   													   
 		   connected = 0;
 		}
 	}
@@ -256,14 +262,12 @@ alt_up_sd_card_fclose(sdcardStorage); //close the file and write the data.
 					case 7:
 						{
 							//sequence to write data to the sd card.
-//							printf("\nAsk for user data and write to SD\n");
 							writefile();
 							break;
 						}
 					case 11:
 					{
 						//read data from the SD card
-//						printf("\nThis should output data user has written to SD\n");
 						readfile();
 						break;
 					}
@@ -581,8 +585,10 @@ bool sdcardTest()
 //------------------------------------------------------------------//
 void writeToSD()
 {
+{
+	short int nf = 0x0d;					 
 	char buff[23] = "This is what i wrote\n";
-	alt_up_sd_card_write(sdcardStorage, "\n");
+	alt_up_sd_card_write(sdcardStorage, nf);
 	for(int i2=0; i2<22; ++i2)
 	{
 		alt_up_sd_card_write(sdcardStorage, buff[i2]);
