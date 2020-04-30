@@ -129,7 +129,7 @@ int main()
 	}
 	printUsers();
 
-	writeToSD(); //testing writing to the SD
+//	writeToSD(); //testing writing to the SD
 /////CLOSE THE OPEN SD CARD FILE
 alt_up_sd_card_fclose(sdcardStorage); //close the file and write the data.
 
@@ -254,16 +254,15 @@ alt_up_sd_card_fclose(sdcardStorage); //close the file and write the data.
 					case 7:
 						{
 							//sequence to write data to the sd card.
-							printf("\nAsk for user data and write to SD\n");
+//							printf("\nAsk for user data and write to SD\n");
 							writefile();
 							break;
 						}
 					case 11:
 					{
 						//read data from the SD card
-						printf("\nThis should output data user has written to SD\n");
+//						printf("\nThis should output data user has written to SD\n");
 						readfile();
-						//readfile();
 						break;
 					}
 					case 13:
